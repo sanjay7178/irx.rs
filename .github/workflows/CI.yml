@@ -16,9 +16,13 @@ on:
   workflow_dispatch:
     inputs:
       tmate:
+        type: choice
         description: 'Start a tmate session for debugging'
         required: false
         default: 'false'
+        options:
+          - true
+          - false
 permissions:
   contents: read
 

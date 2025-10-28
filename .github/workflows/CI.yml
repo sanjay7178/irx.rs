@@ -55,7 +55,7 @@ jobs:
           before-script-linux: |
             # Enable EPEL and install LLVM
             yum install -y epel-release
-            dnf install -y llvm18 llvm18-devel clang18 lld gcc gcc-c++ make curl git
+            yum install -y llvm18 llvm18-devel clang18 lld gcc gcc-c++ make curl git
             # Find and set LLVM 18 prefix
             if [ -d "/usr/lib64/llvm18" ]; then
               export LLVM_SYS_181_PREFIX=/usr/lib64/llvm18

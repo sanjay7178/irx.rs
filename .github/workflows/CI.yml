@@ -54,17 +54,8 @@ jobs:
           manylinux: 2_28
           before-script-linux: |
             # Enable EPEL and install LLVM
-            dnf install -y epel-release
-            dnf install -y llvm18 llvm18-devel clang18 lld gcc gcc-c++ make curl git
-            # Find and set LLVM 18 prefix
-            if [ -d "/usr/lib64/llvm18" ]; then
-              export LLVM_SYS_181_PREFIX=/usr/lib64/llvm18
-            elif [ -d "/usr/lib/llvm18" ]; then
-              export LLVM_SYS_181_PREFIX=/usr/lib/llvm18
-            else
-              export LLVM_SYS_181_PREFIX=/usr
-            fi
-            echo "Using LLVM at: $LLVM_SYS_181_PREFIX"
+            dnf install -y llvm-devel clang lld gcc gcc-c++ make curl git
+            export LLVM_SYS_181_PREFIX=/usr
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:

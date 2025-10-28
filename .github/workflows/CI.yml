@@ -41,12 +41,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
-      - name: Install LLVM and Clang
-        run: |
-          wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
-          echo "deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-18 main" | sudo tee /etc/apt/sources.list.d/llvm-18.list
-          sudo apt-get update
-          sudo apt-get install -y llvm-18 llvm-18-dev clang-18 libclang-18-dev libpolly-18-dev
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
@@ -54,8 +48,11 @@ jobs:
           args: --release --out dist --find-interpreter
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
           manylinux: auto
-        env:
-          LLVM_SYS_181_PREFIX: /usr/lib/llvm-18
+          before-script-linux: |
+            yum install -y wget
+            wget https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-x86_64-linux-gnu-ubuntu-18.04.tar.xz
+            tar -xf clang+llvm-18.1.8-x86_64-linux-gnu-ubuntu-18.04.tar.xz
+            export LLVM_SYS_181_PREFIX=$(pwd)/clang+llvm-18.1.8-x86_64-linux-gnu-ubuntu-18.04
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
@@ -83,9 +80,6 @@ jobs:
       - name: Install LLVM and Clang
         run: |
           wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
-          echo "deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-18 main" | sudo tee /etc/apt/sources.list.d/llvm-18.list
-          sudo apt-get update
-          sudo apt-get install -y llvm-18 llvm-18-dev clang-18 libclang-18-dev libpolly-18-dev
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
@@ -93,11 +87,11 @@ jobs:
           args: --release --out dist --find-interpreter
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
           manylinux: musllinux_1_2
-        env:
-          LLVM_SYS_181_PREFIX: /usr/lib/llvm-18
-      - name: Upload wheels
-        uses: actions/upload-artifact@v4
-        with:
+          before-script-linux: |
+            apk add wget xz
+            wget https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-x86_64-linux-gnu-ubuntu-18.04.tar.xz
+            tar -xf clang+llvm-18.1.8-x86_64-linux-gnu-ubuntu-18.04.tar.xz
+            export LLVM_SYS_181_PREFIX=$(pwd)/clang+llvm-18.1.8-x86_64-linux-gnu-ubuntu-18.04
           name: wheels-musllinux-${{ matrix.platform.target }}
           path: dist
 
@@ -116,9 +110,10 @@ jobs:
         with:
           python-version: 3.x
           architecture: ${{ matrix.platform.target }}
-      - name: Install LLVM and Clang
-        run: |
-          choco install llvm --version=18.1.8 -y
+      # - name: Install LLVM and Clang
+      #   run: |
+      #     # check llvm and install llvm 
+      #     choco install llvm --version=18.1.8 -y
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:

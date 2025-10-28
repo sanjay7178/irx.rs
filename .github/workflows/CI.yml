@@ -175,7 +175,7 @@ jobs:
           args: --release --out dist --find-interpreter
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
         env:
-          LLVM_SYS_181_PREFIX: C:\ProgramData\chocolatey\lib\llvm\tools
+          LLVM_SYS_181_PREFIX: 'C:\Program Files\LLVM'
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:

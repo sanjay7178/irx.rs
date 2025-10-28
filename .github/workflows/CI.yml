@@ -54,7 +54,13 @@ jobs:
           manylinux: 2_28
           before-script-linux: |
             # Enable EPEL and install LLVM
-            yum install -y llvm-devel clang lld gcc gcc-c++ make curl git
+            if whereis dnf; then
+              dnf install epel-release -y
+              dnf install -y llvm-devel clang lld gcc gcc-c++ make curl git
+            else
+              yum install epel-release -y
+              yum install -y llvm-devel clang lld gcc gcc-c++ make curl git
+            fi
             export LLVM_SYS_181_PREFIX=/usr
       - name: Upload wheels
         uses: actions/upload-artifact@v4

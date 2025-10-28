@@ -53,15 +53,35 @@ jobs:
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
           manylinux: 2_28
           before-script-linux: |
+            # detect package manager 
+            whereis() {
+              command -v "$1" >/dev/null 2>&1
+            }
             # Enable EPEL and install LLVM
             if whereis dnf; then
               dnf install epel-release -y
               dnf install -y llvm-devel clang lld gcc gcc-c++ make curl git
+            elif whereis apt-get; then
+              apt-get update
+              apt-get install -y build-essential curl git
+              # Install Homebrew
+              curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh | bash
+              eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+
+              # Install LLVM 18 using Homebrew
+              brew install llvm@18
             else
               yum install epel-release -y
               yum install -y llvm-devel clang lld gcc gcc-c++ make curl git
             fi
-            export LLVM_SYS_181_PREFIX=/usr
+
+            if whereis brew; then
+              # Set LLVM prefix
+              export LLVM_SYS_181_PREFIX=$(brew --prefix llvm@18)
+            else
+              export LLVM_SYS_181_PREFIX=/usr
+            fi
+
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:

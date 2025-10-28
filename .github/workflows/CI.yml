@@ -159,7 +159,7 @@ jobs:
           architecture: ${{ matrix.platform.target }}
       - name: Install LLVM and Clang
         run: |
-          winget install LLVM.LLVM --version 18.1.8
+          winget install LLVM.LLVM --version 18.1.8 --accept-source-agreements --accept-package-agreements
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:

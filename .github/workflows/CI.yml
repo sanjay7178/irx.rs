@@ -49,10 +49,36 @@ jobs:
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
           manylinux: auto
           before-script-linux: |
-            yum install -y wget
-            wget https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-x86_64-linux-gnu-ubuntu-18.04.tar.xz
-            tar -xf clang+llvm-18.1.8-x86_64-linux-gnu-ubuntu-18.04.tar.xz
-            export LLVM_SYS_181_PREFIX=$(pwd)/clang+llvm-18.1.8-x86_64-linux-gnu-ubuntu-18.04
+            # Install wget using available package manager
+            if command -v yum &> /dev/null; then
+                yum install -y wget xz
+            elif command -v microdnf &> /dev/null; then
+                microdnf install -y wget xz
+            elif command -v apt-get &> /dev/null; then
+                apt-get update && apt-get install -y wget xz-utils
+            fi
+            
+            # Download and extract LLVM based on architecture
+            case "$AUDITWHEEL_PLAT" in
+              *x86_64* | *amd64*)
+                wget -q https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-x86_64-linux-gnu-ubuntu-18.04.tar.xz
+                tar -xf clang+llvm-18.1.8-x86_64-linux-gnu-ubuntu-18.04.tar.xz
+                export LLVM_SYS_181_PREFIX=$(pwd)/clang+llvm-18.1.8-x86_64-linux-gnu-ubuntu-18.04
+                ;;
+              *aarch64* | *arm64*)
+                wget -q https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-aarch64-linux-gnu.tar.xz
+                tar -xf clang+llvm-18.1.8-aarch64-linux-gnu.tar.xz
+                export LLVM_SYS_181_PREFIX=$(pwd)/clang+llvm-18.1.8-aarch64-linux-gnu
+                ;;
+              *armv7*)
+                wget -q https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-armv7a-linux-gnueabihf.tar.xz
+                tar -xf clang+llvm-18.1.8-armv7a-linux-gnueabihf.tar.xz
+                export LLVM_SYS_181_PREFIX=$(pwd)/clang+llvm-18.1.8-armv7a-linux-gnueabihf
+                ;;
+              *)
+                echo "Unsupported architecture, trying to build without LLVM"
+                ;;
+            esac
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
@@ -77,9 +103,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
-      - name: Install LLVM and Clang
-        run: |
-          wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
@@ -88,10 +111,33 @@ jobs:
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
           manylinux: musllinux_1_2
           before-script-linux: |
+            # Install wget and xz for musl
             apk add wget xz
-            wget https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-x86_64-linux-gnu-ubuntu-18.04.tar.xz
-            tar -xf clang+llvm-18.1.8-x86_64-linux-gnu-ubuntu-18.04.tar.xz
-            export LLVM_SYS_181_PREFIX=$(pwd)/clang+llvm-18.1.8-x86_64-linux-gnu-ubuntu-18.04
+            
+            # Download and extract LLVM based on architecture
+            case "$AUDITWHEEL_PLAT" in
+              *x86_64* | *amd64*)
+                wget -q https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-x86_64-linux-gnu-ubuntu-18.04.tar.xz
+                tar -xf clang+llvm-18.1.8-x86_64-linux-gnu-ubuntu-18.04.tar.xz
+                export LLVM_SYS_181_PREFIX=$(pwd)/clang+llvm-18.1.8-x86_64-linux-gnu-ubuntu-18.04
+                ;;
+              *aarch64* | *arm64*)
+                wget -q https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-aarch64-linux-gnu.tar.xz
+                tar -xf clang+llvm-18.1.8-aarch64-linux-gnu.tar.xz
+                export LLVM_SYS_181_PREFIX=$(pwd)/clang+llvm-18.1.8-aarch64-linux-gnu
+                ;;
+              *armv7*)
+                wget -q https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-armv7a-linux-gnueabihf.tar.xz
+                tar -xf clang+llvm-18.1.8-armv7a-linux-gnueabihf.tar.xz
+                export LLVM_SYS_181_PREFIX=$(pwd)/clang+llvm-18.1.8-armv7a-linux-gnueabihf
+                ;;
+              *)
+                echo "Unsupported architecture, trying to build without LLVM"
+                ;;
+            esac
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
           name: wheels-musllinux-${{ matrix.platform.target }}
           path: dist
 
@@ -110,10 +156,9 @@ jobs:
         with:
           python-version: 3.x
           architecture: ${{ matrix.platform.target }}
-      # - name: Install LLVM and Clang
-      #   run: |
-      #     # check llvm and install llvm 
-      #     choco install llvm --version=18.1.8 -y
+      - name: Install LLVM and Clang
+        run: |
+          choco install llvm --version=18.1.8 --force -y
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
